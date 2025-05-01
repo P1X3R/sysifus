@@ -1,5 +1,5 @@
 #include "bitboard.h"
-#include "sysifus.h"
+#include "luts.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -15,7 +15,9 @@ void printBitboard(uint64_t bitboard) {
 }
 
 int main(void) {
-  printBitboard(generatePawnPushes((Coordinate){1, 0}, 0ULL, true));
+  for (int square = 0; square < BOARD_AREA; square++) {
+    printBitboard(KING_ATTACK_MAP[square]);
+  }
 
   return 0;
 }

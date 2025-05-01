@@ -1,11 +1,19 @@
 add_rules("mode.debug", "mode.release")
 
 target("sysifus")
-set_kind("binary")
+set_kind("shared")
 set_languages("c99")
 set_warnings("all", "error")
 add_files("src/*.c")
 add_includedirs("include")
+
+target("test")
+set_kind("binary")
+set_languages("c99")
+set_warnings("all", "error")
+add_files("test/main.c")
+add_deps("sysifus")
+-- add_includedirs("include")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
