@@ -1,29 +1,30 @@
 #include "lutgen.h"
 #include "bitboard.h"
 #include <stdint.h>
+#include <stdio.h>
 
-void generateJumpingAttackMap(const Coordinate offsets[JUMPING_OFFSETS],
-                              uint64_t lut[BOARD_LENGTH]) {
-  for (uint8_t square = 0; square < BOARD_AREA; square++) {
-    Coordinate coord = {
-        .rank = (int8_t)(square / BOARD_LENGTH),
-        .file = (int8_t)(square % BOARD_LENGTH),
+#define LUTS_FILENAME "luts.h"
+
+uint64_t generateJumpingAttack(const Coordinate offsets[JUMPING_OFFSETS],
+                               const int8_t square) {
+  Coordinate coord = {
+      .rank = (int8_t)(square / BOARD_LENGTH),
+      .file = (int8_t)(square % BOARD_LENGTH),
+  };
+  uint64_t attack = 0;
+
+  for (int8_t offsetIndex = 0; offsetIndex < JUMPING_OFFSETS; offsetIndex++) {
+    const Coordinate attackedCoord = {
+        (int8_t)(coord.rank + offsets[offsetIndex].rank),
+        (int8_t)(coord.file + offsets[offsetIndex].file),
     };
-    uint64_t attack = 0;
 
-    for (int8_t offsetIndex = 0; offsetIndex < JUMPING_OFFSETS; offsetIndex++) {
-      const Coordinate attackedCoord = {
-          (int8_t)(coord.rank + offsets[offsetIndex].rank),
-          (int8_t)(coord.file + offsets[offsetIndex].file),
-      };
-
-      if (isCoordValid(attackedCoord)) {
-        attack |= 1ULL << coordToSquare(attackedCoord);
-      }
+    if (isCoordValid(attackedCoord)) {
+      attack |= 1ULL << coordToSquare(attackedCoord);
     }
-
-    lut[square] = attack;
   }
+
+  return attack;
 }
 
 static uint64_t generateOccupancyMask(const Coordinate coord) {
@@ -91,33 +92,78 @@ static uint64_t generateOccupancyMask(const Coordinate coord) {
   return mask;
 }
 
-void generateSlidingAttackMap(const Coordinate directions[SLIDING_DIRECTIONS],
-                              uint64_t lut[BOARD_LENGTH]) {
-  for (uint8_t square = 0; square < BOARD_AREA; square++) {
-    Coordinate coord = {
-        .rank = (int8_t)(square / BOARD_LENGTH),
-        .file = (int8_t)(square % BOARD_LENGTH),
-    };
-    uint64_t attack = 0;
+uint64_t generateSlidingAttack(const Coordinate directions[SLIDING_DIRECTIONS],
+                               const int8_t square) {
+  Coordinate coord = {
+      .rank = (int8_t)(square / BOARD_LENGTH),
+      .file = (int8_t)(square % BOARD_LENGTH),
+  };
+  uint64_t attack = 0;
 
-    for (int8_t directionIndex = 0; directionIndex < SLIDING_DIRECTIONS;
-         directionIndex++) {
-      uint64_t ray = 0;
+  for (int8_t directionIndex = 0; directionIndex < SLIDING_DIRECTIONS;
+       directionIndex++) {
+    uint64_t ray = 0;
 
-      for (Coordinate attackedCoord =
-               {(int8_t)(coord.rank + directions[directionIndex].rank),
-                (int8_t)(coord.file + directions[directionIndex].file)};
-           isCoordValid(attackedCoord);
-           attackedCoord = (Coordinate){
-               (int8_t)(attackedCoord.rank + directions[directionIndex].rank),
-               (int8_t)(attackedCoord.file + directions[directionIndex].file),
-           }) {
-        ray |= 1ULL << coordToSquare(attackedCoord);
-      }
-
-      attack |= ray;
+    for (Coordinate attackedCoord =
+             {(int8_t)(coord.rank + directions[directionIndex].rank),
+              (int8_t)(coord.file + directions[directionIndex].file)};
+         isCoordValid(attackedCoord);
+         attackedCoord = (Coordinate){
+             (int8_t)(attackedCoord.rank + directions[directionIndex].rank),
+             (int8_t)(attackedCoord.file + directions[directionIndex].file),
+         }) {
+      ray |= 1ULL << coordToSquare(attackedCoord);
     }
 
-    lut[square] = attack & generateOccupancyMask(coord);
+    attack |= ray;
   }
+
+  return attack & generateOccupancyMask(coord);
+}
+
+static void write_header(FILE *fptr) {
+  (void)fprintf(fptr, "// This file stores generated LUTs. DO NOT MODIFY!\n\n");
+  (void)fprintf(fptr, "#pragma once\n\n");
+  (void)fprintf(fptr, "#include \"bitboard.h\"\n\n");
+}
+
+static void write_jumping_attack_map(FILE *fptr, const char *name,
+                                     const Coordinate *offsets,
+                                     int num_offsets) {
+  (void)fprintf(fptr, "static const uint64_t %s[BOARD_AREA] = {", name);
+  for (int8_t square = 0; square < BOARD_AREA; square++) {
+    (void)fprintf(fptr, "0x%lx, ", generateJumpingAttack(offsets, square));
+  }
+  (void)fprintf(fptr, "};\n");
+}
+
+static void write_sliding_relevant_mask(FILE *fptr, const char *name,
+                                        const Coordinate *directions,
+                                        int num_directions) {
+  (void)fprintf(fptr, "static const uint64_t %s[BOARD_AREA] = {", name);
+  for (int8_t square = 0; square < BOARD_AREA; square++) {
+    (void)fprintf(fptr, "0x%lx, ", generateSlidingAttack(directions, square));
+  }
+  (void)fprintf(fptr, "};\n");
+}
+
+void bake(void) {
+  FILE *fptr = fopen(LUTS_FILENAME, "w");
+  if (!fptr) {
+    perror("Error opening LUTs file");
+    return;
+  }
+
+  write_header(fptr);
+
+  write_jumping_attack_map(fptr, "KNIGHT_ATTACK_MAP", KNIGHT_OFFSETS,
+                           JUMPING_OFFSETS);
+  write_jumping_attack_map(fptr, "KING_ATTACK_MAP", KING_OFFSETS,
+                           JUMPING_OFFSETS);
+  write_sliding_relevant_mask(fptr, "BISHOP_RELEVANT_MASK", BISHOP_DIRECTIONS,
+                              SLIDING_DIRECTIONS);
+  write_sliding_relevant_mask(fptr, "ROOK_RELEVANT_MASK", ROOK_DIRECTIONS,
+                              SLIDING_DIRECTIONS);
+
+  (void)fclose(fptr);
 }
