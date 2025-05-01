@@ -13,7 +13,7 @@ set_languages("c99")
 set_warnings("all", "error")
 add_files("test/main.c")
 add_deps("sysifus")
--- add_includedirs("include")
+add_includedirs("include")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
