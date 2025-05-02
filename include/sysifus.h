@@ -44,4 +44,8 @@ inline uint64_t getAttacksByLUT(const uint64_t lut[BOARD_AREA],
   return lut[square] & ~blockedSquare;
 }
 
+uint64_t getAttackByOccupancy(int8_t square, const uint64_t *lut[BOARD_AREA],
+                              const uint64_t relevantMask[BOARD_AREA],
+                              uint64_t friendly, uint64_t enemy);
+
 void bake(void);

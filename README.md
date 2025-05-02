@@ -29,9 +29,11 @@ Sysifus is a highly optimized and innovative chess move generation system focuse
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/sysifus.git
+   git clone https://github.com/P1X3R/sysifus.git
    cd sysifus
-2. Compile the project using `make` or your preferred build system.
+   ```
+2. Compile the project using `xmake`
+3. You can run the test using `xmake r`
 
 ## How to Contribute
 Feel free to fork the repository, submit issues, and create pull requests. Contributions are welcome, especially in areas like:
@@ -41,4 +43,4 @@ Feel free to fork the repository, submit issues, and create pull requests. Contr
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
-> ***Let me know if you'd like to tweak anything else!***
+> ***Sysifus is still evolving — contributions, critiques, and collaborations are all welcome.***

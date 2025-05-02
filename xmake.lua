@@ -6,6 +6,7 @@ set_languages("c99")
 set_warnings("all", "error")
 add_files("src/*.c")
 add_includedirs("include")
+set_pcheader("include/luts.h")
 
 target("test")
 set_kind("binary")

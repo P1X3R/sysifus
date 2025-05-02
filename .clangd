@@ -1,0 +1,5 @@
+# osmocom code has many errors/warnings and seems to lock up clangd
+If:
+  PathMatch: luts.h
+Index:
+  Background: Skip

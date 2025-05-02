@@ -1,4 +1,5 @@
 #include "bitboard.h"
+#include "sysifus.h"
 #include "luts.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -15,8 +16,8 @@ void printBitboard(uint64_t bitboard) {
 }
 
 int main(void) {
-  for (int square = 0; square < BOARD_AREA; square++) {
-    printBitboard(KING_ATTACK_MAP[square]);
+  for (int16_t variant = 0; variant < BISHOP_POSSIBLE_VARIANTS; variant++){
+    printBitboard(ROOK_ATTACK_MAP[0][variant]);
   }
 
   return 0;
