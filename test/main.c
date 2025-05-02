@@ -1,4 +1,5 @@
 #include "bitboard.h"
+#include "luts.h"
 #include "sysifus.h"
 #include <check.h>
 #include <stdint.h>
@@ -7,6 +8,7 @@
 #include <time.h>
 
 #define TESTS_ITERATIONS 100
+#define VERBOSE_LOG
 
 void printBitboard(uint64_t bitboard) {
   printf("  A B C D E F G H\n");
@@ -25,17 +27,9 @@ typedef struct {
   bool isWhite;
 } pawnTestingContext;
 
-static pawnTestingContext generatePawnTestingContext(void) {
-  pawnTestingContext ctx = {
-      (Coordinate){
-          (int8_t)(rand() % BOARD_LENGTH),
-          (int8_t)(rand() % BOARD_LENGTH),
-      },
-      .occupancy = 0ULL,
-      .isWhite = rand() % 2,
-  };
+static uint64_t generateRandomOccupancy(const uint8_t denominator) {
+  uint64_t occupancy = 0;
 
-  // Generate random occupancy by a percentage for each square to be set
   for (int8_t square = 0; square < BOARD_AREA; square++) {
     // Because is a probability between of 1/16
     // so there's a 6.25% of chance that a square is set
@@ -43,9 +37,23 @@ static pawnTestingContext generatePawnTestingContext(void) {
     const uint8_t denominator = 16;
 
     if ((rand() % (denominator + 1)) == 1) {
-      ctx.occupancy |= 1ULL << square;
+      occupancy |= 1ULL << square;
     }
   }
+
+  return occupancy;
+}
+
+static pawnTestingContext generatePawnTestingContext(void) {
+  const uint8_t pawnDenominator = 16;
+  pawnTestingContext ctx = {
+      (Coordinate){
+          (int8_t)(rand() % BOARD_LENGTH),
+          (int8_t)(rand() % BOARD_LENGTH),
+      },
+      .occupancy = generateRandomOccupancy(pawnDenominator),
+      .isWhite = rand() % 2,
+  };
 
 #ifdef VERBOSE_LOG
   printf("=== Test log ===\n");
@@ -59,10 +67,18 @@ static pawnTestingContext generatePawnTestingContext(void) {
   return ctx;
 }
 
-// Property: Pawns should not be able to push if on back rank or invalid square
-// Property: A pawn should push 1 step if the square is empty
-// Property: A pawn should push 2 steps only if on starting rank and path is
-// clear
+/*
+ * Valid Square: For any valid coordinate, the result should be a subset of
+ * valid squares White Pawns:
+ *   - On rank 2, should generate 1 or 2 squares forward (if not blocked)
+ *   - On other ranks, should generate exactly 1 square forward (if not blocked)
+ * Black Pawns:
+ *   - On rank 7, should generate 1 or 2 squares forward (if not blocked)
+ *   - On other ranks, should generate exactly 1 square forward (if not blocked)
+ * Blocking: Pushes should never include blocked squares
+ * Edge Cases: Pawns on back rank (rank 1 for black, rank 8 for white) should
+ * return 0
+ */
 START_TEST(pawnPushesProps) {
   for (int i = 0; i < TESTS_ITERATIONS; i++) {
     const pawnTestingContext ctx = generatePawnTestingContext();
@@ -104,6 +120,17 @@ START_TEST(pawnPushesProps) {
 }
 END_TEST
 
+/*
+ * Valid Captures: Should only return squares diagonally forward
+ * Color Specific:
+ *   - White pawns capture north-east and north-west
+ *   - Black pawns capture south-east and south-west
+ * Enemy Presence: Result should be subset of enemy squares
+ * Edge Files:
+ *   - Pawns on file a should only have right captures
+ *   - Pawns on file h should only have left captures
+ * No Wraparound: Captures should never wrap around board edges
+ */
 START_TEST(pawnCapturesProps) {
   for (int i = 0; i < TESTS_ITERATIONS; i++) {
     const pawnTestingContext ctx = generatePawnTestingContext();
@@ -135,13 +162,68 @@ START_TEST(pawnCapturesProps) {
 }
 END_TEST
 
-Suite *pawnsTests(void) {
-  Suite *suite = suite_create("Pawn move generation tests");
+START_TEST(slidingAttackMap) {
+  for (int i = 0; i < TESTS_ITERATIONS; i++) {
+    const int8_t square = (int8_t)(rand() % BOARD_AREA);
+    const uint64_t friendly = generateRandomOccupancy(8);
+    const uint64_t enemy = generateRandomOccupancy(8);
+    const bool isBishop = rand() % 2;
+    const uint64_t *relevantMask = isBishop
+                                       ? (const uint64_t *)BISHOP_RELEVANT_MASK
+                                       : (const uint64_t *)ROOK_RELEVANT_MASK;
+    uint64_t moves;
+    if (isBishop) {
+      moves = getAttackByOccupancy(square, relevantMask,
+                                   (uint16_t)BISHOP_POSSIBLE_VARIANTS,
+                                   BISHOP_ATTACK_MAP, friendly, enemy);
+    } else {
+      moves = getAttackByOccupancy(square, relevantMask,
+                                   (uint16_t)ROOK_POSSIBLE_VARIANTS,
+                                   ROOK_ATTACK_MAP, friendly, enemy);
+    }
 
-  TCase *pawns = tcase_create("Pawn pushes");
+#ifdef VERBOSE_LOG
+    printf("=== Test log ===\n");
+    printf("- Piece: %s\n", isBishop ? "Bishop" : "Rook");
+    printf("- Square: %d\n", square);
+    printf("- Friendly:\n");
+    printBitboard(friendly);
+    printf("- Enemy:\n");
+    printBitboard(enemy);
+    printf("- Moves:\n");
+    printBitboard(moves);
+#endif /* ifdef VERBOSE_LOG */
+
+    ck_assert_msg((moves & friendly) == 0,
+                  "Attacks include friendly pieces for %s at %d",
+                  isBishop ? "bishop" : "rook", square);
+
+    if (isBishop) {
+      ck_assert_msg(
+          (moves & ~BISHOP_ATTACK_MAP[square][0]) == 0,
+          "Blocked board has more moves than empty board for %s at %d ",
+          isBishop ? "bishop" : "rook", square);
+    } else {
+      ck_assert_msg(
+          (moves & ~ROOK_ATTACK_MAP[square][0]) == 0,
+          "Blocked board has more moves than empty board for %s at %d ",
+          isBishop ? "bishop" : "rook", square);
+    }
+  }
+}
+END_TEST
+
+Suite *moveGeneration(void) {
+  Suite *suite = suite_create("Pseudo-legal move generation test suite");
+
+  TCase *pawns = tcase_create("Pawn moves");
   tcase_add_test(pawns, pawnPushesProps);
   tcase_add_test(pawns, pawnCapturesProps);
   suite_add_tcase(suite, pawns);
+
+  TCase *sliding = tcase_create("Sliding moves");
+  tcase_add_test(sliding, slidingAttackMap);
+  suite_add_tcase(suite, sliding);
 
   return suite;
 }
@@ -150,11 +232,11 @@ int main(void) {
   srand(time(NULL));
 
   int number_failed;
-  Suite *pawnSuite = pawnsTests();
-  SRunner *pawnSuiteRunner = srunner_create(pawnSuite);
+  Suite *pseudoLegal = moveGeneration();
+  SRunner *pseudoLegalRunner = srunner_create(pseudoLegal);
 
-  srunner_run_all(pawnSuiteRunner, CK_NORMAL);
-  number_failed = srunner_ntests_failed(pawnSuiteRunner);
-  srunner_free(pawnSuiteRunner);
+  srunner_run_all(pseudoLegalRunner, CK_NORMAL);
+  number_failed = srunner_ntests_failed(pseudoLegalRunner);
+  srunner_free(pseudoLegalRunner);
   return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -185,7 +185,7 @@ generateSlidingAttack(const uint64_t occupancy,
     attack |= ray;
   }
 
-  return attack & generateOccupancyMask(coord);
+  return attack;
 }
 
 typedef struct {
@@ -254,7 +254,11 @@ static void
 generateSlidingRelevantMasksLUT(const Coordinate directions[SLIDING_DIRECTIONS],
                                 uint64_t lut[BOARD_AREA]) {
   for (int8_t square = 0; square < BOARD_AREA; square++) {
-    lut[square] = generateSlidingAttack(0, directions, square);
+    lut[square] = generateSlidingAttack(0, directions, square) &
+                  generateOccupancyMask((Coordinate){
+                      .rank = (int8_t)(square / BOARD_LENGTH),
+                      .file = (int8_t)(square % BOARD_LENGTH),
+                  });
   }
 }
 
@@ -348,8 +352,9 @@ void bake(void) {
 }
 
 uint64_t getAttackByOccupancy(const int8_t square,
-                              const uint64_t *lut[BOARD_AREA],
                               const uint64_t relevantMask[BOARD_AREA],
+                              const uint16_t possibleVariants,
+                              const uint64_t lut[BOARD_AREA][possibleVariants],
                               const uint64_t friendly, const uint64_t enemy) {
 #ifndef NDEBUG
   assert(lut != NULL);
@@ -360,8 +365,13 @@ uint64_t getAttackByOccupancy(const int8_t square,
     return 0;
   }
 
-  const uint64_t blockedSquares = friendly | enemy;
-  return lut[square][getVariantIndex(blockedSquares,
-                                     (RelevantMask){relevantMask[square]})] &
-         ~friendly;
+  const uint16_t variantIndex =
+      getVariantIndex((friendly | enemy) & relevantMask[square],
+                      (RelevantMask){relevantMask[square]});
+
+#ifndef NDEBUG
+  assert(variantIndex < possibleVariants);
+#endif /* ifndef NDEBUG */
+
+  return lut[square][variantIndex] & ~friendly;
 }
