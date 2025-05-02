@@ -42,6 +42,11 @@ uint64_t generatePawnCaptures(Coordinate coord, uint64_t enemy, bool isWhite);
 inline uint64_t getAttacksByLUT(const uint64_t lut[BOARD_AREA],
                                 const int8_t square,
                                 const uint64_t blockedSquare) {
+  // Add bounds check since this is a public function
+  if (square < 0 || square >= BOARD_AREA) {
+    return 0;
+  }
+
   return lut[square] & ~blockedSquare;
 }
 

@@ -1,5 +1,6 @@
 #include "sysifus.h"
 #include "bitboard.h"
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -59,6 +60,10 @@ uint64_t generatePawnCaptures(const Coordinate coord, const uint64_t enemy,
 
 static uint64_t generateJumpingAttack(const Coordinate offsets[JUMPING_OFFSETS],
                                       const int8_t square) {
+#ifndef NDEBUG
+  assert(offsets != NULL);
+#endif /* ifndef  NDEBUG */
+
   Coordinate coord = {
       .rank = (int8_t)(square / BOARD_LENGTH),
       .file = (int8_t)(square % BOARD_LENGTH),
@@ -148,6 +153,10 @@ static uint64_t
 generateSlidingAttack(const uint64_t occupancy,
                       const Coordinate directions[SLIDING_DIRECTIONS],
                       const int8_t square) {
+#ifndef NDEBUG
+  assert(directions != NULL);
+#endif /* ifndef  NDEBUG */
+
   Coordinate coord = {
       .rank = (int8_t)(square / BOARD_LENGTH),
       .file = (int8_t)(square % BOARD_LENGTH),
@@ -186,6 +195,10 @@ typedef struct {
 static void generateOccupancyVariants(const RelevantMask relevantMask,
                                       const uint16_t possibleVariants,
                                       uint64_t variants[possibleVariants]) {
+#ifndef NDEBUG
+  assert(variants != NULL);
+#endif
+
   for (uint16_t variantIndex = 0; variantIndex < possibleVariants;
        variantIndex++) {
     // Iterate over bits of the variant index Brian Kernighan's way
@@ -322,13 +335,31 @@ void bake(void) {
   writeSlidingAttackMap(fptr, "ROOK_ATTACK_MAP", ROOK_RELEVANT_MASK_TEMP,
                         (uint16_t)ROOK_POSSIBLE_VARIANTS, ROOK_DIRECTIONS);
 
-  (void)fclose(fptr);
+  if (ferror(fptr)) {
+    perror("Error writing to LUTs file");
+    fclose(fptr);
+    return;
+  }
+
+  if (fclose(fptr) != 0) {
+    perror("Error closing LUTs file");
+    return;
+  }
 }
 
 uint64_t getAttackByOccupancy(const int8_t square,
                               const uint64_t *lut[BOARD_AREA],
                               const uint64_t relevantMask[BOARD_AREA],
                               const uint64_t friendly, const uint64_t enemy) {
+#ifndef NDEBUG
+  assert(lut != NULL);
+  assert(relevantMask != NULL);
+#endif /* ifndef NDEBUG */
+
+  if (square < 0 || square >= BOARD_AREA) {
+    return 0;
+  }
+
   const uint64_t blockedSquares = friendly | enemy;
   return lut[square][getVariantIndex(blockedSquares,
                                      (RelevantMask){relevantMask[square]})] &
