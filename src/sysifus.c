@@ -30,6 +30,33 @@ uint64_t generatePawnPushes(const Coordinate coord,
   return pushes;
 }
 
+uint64_t generatePawnCaptures(const Coordinate coord, const uint64_t enemy,
+                              const bool isWhite) {
+  if (!isCoordValid(coord)) {
+    return 0;
+  }
+
+  const int8_t pawnDirection = isWhite ? 1 : -1;
+  const Coordinate leftKill = {
+      .rank = (int8_t)(coord.rank + pawnDirection),
+      .file = (int8_t)(coord.file - 1),
+  };
+  const Coordinate rightKill = {
+      .rank = (int8_t)(leftKill.rank),
+      .file = (int8_t)(coord.file + 1),
+  };
+  uint64_t captures = 0;
+
+  if (isCoordValid(leftKill)) {
+    captures |= 1ULL << coordToSquare(leftKill);
+  }
+  if (isCoordValid(rightKill)) {
+    captures |= 1ULL << coordToSquare(rightKill);
+  }
+
+  return captures & enemy;
+}
+
 static uint64_t generateJumpingAttack(const Coordinate offsets[JUMPING_OFFSETS],
                                       const int8_t square) {
   Coordinate coord = {

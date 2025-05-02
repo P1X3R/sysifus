@@ -1,6 +1,5 @@
 #include "bitboard.h"
 #include "sysifus.h"
-#include "luts.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -16,9 +15,7 @@ void printBitboard(uint64_t bitboard) {
 }
 
 int main(void) {
-  for (int16_t variant = 0; variant < BISHOP_POSSIBLE_VARIANTS; variant++){
-    printBitboard(ROOK_ATTACK_MAP[0][variant]);
-  }
+  printBitboard(generatePawnCaptures((Coordinate){0, 0}, 0ULL, false));
 
   return 0;
 }

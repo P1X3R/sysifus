@@ -37,6 +37,7 @@ static const Coordinate ROOK_DIRECTIONS[SLIDING_DIRECTIONS] = {
 
 uint64_t generatePawnPushes(Coordinate coord, uint64_t blockedSquares,
                             bool isWhite);
+uint64_t generatePawnCaptures(Coordinate coord, uint64_t enemy, bool isWhite);
 
 inline uint64_t getAttacksByLUT(const uint64_t lut[BOARD_AREA],
                                 const int8_t square,
