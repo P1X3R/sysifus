@@ -35,6 +35,11 @@ static const Coordinate ROOK_DIRECTIONS[SLIDING_DIRECTIONS] = {
     {0, -1}  // Left
 };
 
+typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } Piece;
+typedef struct {
+  uint64_t quiet, kills;
+} Move;
+
 uint64_t generatePawnPushes(Coordinate coord, uint64_t blockedSquares,
                             bool isWhite);
 uint64_t generatePawnCaptures(Coordinate coord, uint64_t enemy, bool isWhite);
@@ -55,5 +60,8 @@ uint64_t getAttackByOccupancy(int8_t square,
                               uint16_t possibleVariants,
                               const uint64_t lut[BOARD_AREA][possibleVariants],
                               uint64_t friendly, uint64_t enemy);
+
+Move getPseudoLegal(Piece type, Coordinate coord, uint64_t friendly,
+                    bool isWhite, uint64_t enemy);
 
 void bake(void);

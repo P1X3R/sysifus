@@ -10,7 +10,7 @@
 #define TESTS_ITERATIONS 100
 #define VERBOSE_LOG
 
-void printBitboard(uint64_t bitboard) {
+static void printBitboard(uint64_t bitboard) {
   printf("  A B C D E F G H\n");
   for (int8_t rank = BOARD_LENGTH - 1; rank >= 0; rank--) {
     printf("%d ", rank + 1);

@@ -35,6 +35,40 @@ Sysifus is a highly optimized and innovative chess move generation system focuse
 2. Compile the project using `xmake`
 3. You can run the test using `xmake r`
 
+### Generate moves
+One code example explains more than two paragraphs of documentation:
+
+```c
+#include <sysifus.h>
+#include <bitboard.h> // Some bitboard helper functions to make life easier
+#include <stdint.h>
+
+void printBitboard(uint64_t bitboard) {
+  printf("  A B C D E F G H\n");
+  for (int8_t rank = BOARD_LENGTH - 1; rank >= 0; rank--) {
+    printf("%d ", rank + 1);
+    for (int8_t file = 0; file < BOARD_LENGTH; file++) {
+      printf("%c ", isSet((Coordinate){rank, file}, bitboard) ? '#' : '.');
+    }
+    printf("\n");
+  }
+}
+
+int main(void) {
+  // Example: Generate pseudo-legal moves for a white knight on square b1
+  const Coordinate position = {0, 1}; // rank 0, file 1 -> b1
+  const uint64_t whitePieces = 1ULL << coordToSquare(position); // bitboard with knight at b1
+  const uint64_t blackPieces = 1ULL << coordToSquare((Coordinate){2, 2}); // e.g. enemy piece at c3
+
+  Move moves = getPseudoLegal(KNIGHT, position, whitePieces, true, blackPieces);
+  printBitboard(moves.quiet);
+  printBitboard(moves.kills);
+  
+  // Do something with the generated moves...
+  return 0;
+}
+```
+
 ## How to Contribute
 Feel free to fork the repository, submit issues, and create pull requests. Contributions are welcome, especially in areas like:
 - Optimizing move generation.

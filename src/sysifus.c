@@ -1,5 +1,6 @@
 #include "sysifus.h"
 #include "bitboard.h"
+#include "luts.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -374,4 +375,54 @@ uint64_t getAttackByOccupancy(const int8_t square,
 #endif /* ifndef NDEBUG */
 
   return lut[square][variantIndex] & ~friendly;
+}
+
+// WARNING: For king pseudo-legal you need to delete the attacked squares, you
+// can do it in the following way: kingAttacks & ~attackedSquares.
+// WARNING: For the pawn moves, it doesn't calculate the pawn promotions or en
+// passant, you have to handle them yourself.
+Move getPseudoLegal(const Piece type, const Coordinate coord,
+                    const uint64_t friendly, const bool isWhite,
+                    const uint64_t enemy) {
+  Move move = {0, 0};
+  const int8_t square = coordToSquare(coord);
+  const uint64_t blocked = friendly | enemy;
+
+  switch (type) {
+  case PAWN:
+    move.quiet = generatePawnPushes(coord, blocked, isWhite);
+    move.kills = generatePawnCaptures(coord, enemy, isWhite);
+    break;
+  case KNIGHT:
+    move.quiet = KNIGHT_ATTACK_MAP[square] & ~blocked;
+    move.kills = KNIGHT_ATTACK_MAP[square] & enemy;
+    break;
+  case BISHOP: {
+    const uint64_t attacks = getAttackByOccupancy(
+        square, BISHOP_RELEVANT_MASK, BISHOP_POSSIBLE_VARIANTS,
+        BISHOP_ATTACK_MAP, friendly, enemy);
+    move.quiet = attacks & ~friendly;
+    move.kills = attacks & enemy;
+  } break;
+  case ROOK: {
+    const uint64_t attacks =
+        getAttackByOccupancy(square, ROOK_RELEVANT_MASK, ROOK_POSSIBLE_VARIANTS,
+                             ROOK_ATTACK_MAP, friendly, enemy);
+    move.quiet = attacks & ~friendly;
+    move.kills = attacks & enemy;
+  } break;
+  case QUEEN: {
+    const Move rook = getPseudoLegal(ROOK, coord, friendly, isWhite, enemy);
+    const Move bishop = getPseudoLegal(BISHOP, coord, friendly, isWhite, enemy);
+
+    move.quiet = rook.quiet | bishop.quiet;
+    move.kills = rook.kills | bishop.kills;
+  } break;
+  case KING:
+    move.quiet = KING_ATTACK_MAP[square] & ~blocked;
+    move.kills = KING_ATTACK_MAP[square] & enemy;
+    break;
+  }
+
+  return move;
 }
