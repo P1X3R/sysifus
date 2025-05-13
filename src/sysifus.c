@@ -2,6 +2,7 @@
 #include "bitboard.h"
 #include "luts.h"
 #include <assert.h>
+#include <immintrin.h>
 #include <stdint.h>
 #include <stdio.h>
 
