@@ -228,27 +228,20 @@ static void generateOccupancyVariants(const RelevantMask relevantMask,
 
 static uint16_t getVariantIndex(const uint64_t occupancy,
                                 const RelevantMask relevantMask) {
-  uint16_t variantIndex = 0;
-  uint64_t relevantMaskTemp = relevantMask.mask;
+  // Filter only relevant bits and compress them to LSB positions
+  const uint64_t occupied = occupancy & relevantMask.mask;
 
-  // Iterate over bits of the variant index Brian Kernighan's way
-  // https://www.geeksforgeeks.org/count-set-bits-in-an-integer/
-  for (uint8_t bit = 0; relevantMaskTemp; bit++) {
-    // This a & -a just isolate the least significant bit of number
-    const uint64_t LSB = relevantMaskTemp & -relevantMaskTemp;
-
-    // If the relevant mask the least significant bit is set in the occupancy
-    // variant, add a bit to the variant_index
-    if (occupancy & LSB) {
-      // Append the bit into variantIndex
-      variantIndex |= 1 << bit;
-    }
-
-    // Clear the least significant bit
-    relevantMaskTemp &= ~LSB;
-  }
-
-  return variantIndex;
+// Use pext instruction if available (Intel/AMD CPUs with BMI2)
+#if defined(__BMI2__)
+  return _pext_u64(occupied, relevantMask.mask);
+#else
+  // Fallback: Multiply-and-mask technique for bit compression
+  const uint64_t spacedBits =
+      occupied * relevantMask.mask; // Creates spaced-out bits
+  return (spacedBits >>
+          (BOARD_AREA - __builtin_popcountll(relevantMask.mask))) &
+         ((1 << __builtin_popcountll(relevantMask.mask)) - 1);
+#endif
 }
 
 static void
@@ -367,8 +360,7 @@ uint64_t getAttackByOccupancy(const int8_t square,
   }
 
   const uint16_t variantIndex =
-      getVariantIndex((friendly | enemy) & relevantMask[square],
-                      (RelevantMask){relevantMask[square]});
+      getVariantIndex(friendly | enemy, (RelevantMask){relevantMask[square]});
 
 #ifndef NDEBUG
   assert(variantIndex < possibleVariants);
