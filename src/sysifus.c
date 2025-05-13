@@ -236,8 +236,7 @@ static uint16_t getVariantIndex(const uint64_t occupancy,
   return _pext_u64(occupied, relevantMask.mask);
 #else
   // Fallback: Multiply-and-mask technique for bit compression
-  const uint64_t spacedBits =
-      occupied * relevantMask.mask; // Creates spaced-out bits
+  const uint64_t spacedBits = occupied * relevantMask.mask;
   return (spacedBits >>
           (BOARD_AREA - __builtin_popcountll(relevantMask.mask))) &
          ((1 << __builtin_popcountll(relevantMask.mask)) - 1);
