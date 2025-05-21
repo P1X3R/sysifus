@@ -9,7 +9,7 @@ target("sysifus")
   add_includedirs("include", { public = true })
   set_pcheader("include/luts.h")
 
-target("test")
+target("sysifusTesting")
   set_kind("binary")
   set_languages("c99")
   set_warnings("all", "error")
