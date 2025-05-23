@@ -35,7 +35,7 @@ static const Coordinate ROOK_DIRECTIONS[SLIDING_DIRECTIONS] = {
     {0, -1}  // Left
 };
 
-typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } Piece;
+typedef enum { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NOTHING } Piece;
 typedef struct {
   uint64_t quiet, kills;
 } Move;
