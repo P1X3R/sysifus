@@ -414,6 +414,8 @@ Move getPseudoLegal(const Piece type, const Coordinate coord,
     move.quiet = KING_ATTACK_MAP[square] & ~blocked;
     move.kills = KING_ATTACK_MAP[square] & enemy;
     break;
+  case NOTHING:
+    break;
   }
 
   return move;
