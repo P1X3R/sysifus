@@ -36,7 +36,7 @@ static uint64_t generateRandomOccupancy(const uint8_t denominator) {
     // So occuped bits are more spreaded out
     const uint8_t denominator = 16;
 
-    if ((rand() % (denominator + 1)) == 1) {
+    if ((rand() % denominator) == 1) {
       occupancy |= 1ULL << square;
     }
   }
