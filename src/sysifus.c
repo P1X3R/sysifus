@@ -8,10 +8,6 @@
 
 uint64_t generatePawnPushes(const Coordinate coord,
                             const uint64_t blockedSquares, const bool isWhite) {
-  if (!isCoordValid(coord)) {
-    return 0;
-  }
-
   uint64_t pushes = 1ULL << coordToSquare(coord);
 
   if (isWhite) {
@@ -35,29 +31,15 @@ uint64_t generatePawnPushes(const Coordinate coord,
 
 uint64_t generatePawnCaptures(const Coordinate coord, const uint64_t enemy,
                               const bool isWhite) {
-  if (!isCoordValid(coord)) {
-    return 0;
-  }
+  const int8_t direction = isWhite ? 1 : -1;
+  const uint64_t leftCapture =
+      1ULL << ((coord.rank + direction) * BOARD_LENGTH + coord.file - 1);
+  const uint64_t rightCapture =
+      1ULL << ((coord.rank + direction) * BOARD_LENGTH + coord.file + 1);
 
-  const int8_t pawnDirection = isWhite ? 1 : -1;
-  const Coordinate leftKill = {
-      .rank = (int8_t)(coord.rank + pawnDirection),
-      .file = (int8_t)(coord.file - 1),
-  };
-  const Coordinate rightKill = {
-      .rank = (int8_t)(leftKill.rank),
-      .file = (int8_t)(coord.file + 1),
-  };
-  uint64_t captures = 0;
-
-  if (isCoordValid(leftKill)) {
-    captures |= 1ULL << coordToSquare(leftKill);
-  }
-  if (isCoordValid(rightKill)) {
-    captures |= 1ULL << coordToSquare(rightKill);
-  }
-
-  return captures & enemy;
+  return ((coord.file > 0 ? leftCapture : 0) |
+          (coord.file < BOARD_LENGTH - 1 ? rightCapture : 0)) *
+         (uint64_t)(coord.rank != (isWhite ? BOARD_LENGTH - 1 : 0));
 }
 
 static uint64_t generateJumpingAttack(const Coordinate offsets[JUMPING_OFFSETS],
@@ -376,6 +358,10 @@ uint64_t getAttackByOccupancy(const int8_t square,
 Move getPseudoLegal(const Piece type, const Coordinate coord,
                     const uint64_t friendly, const bool isWhite,
                     const uint64_t enemy) {
+  if (!isCoordValid(coord)) {
+    return (Move){0, 0};
+  }
+
   Move move = {0, 0};
   const int8_t square = coordToSquare(coord);
   const uint64_t blocked = friendly | enemy;
