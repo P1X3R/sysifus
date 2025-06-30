@@ -355,22 +355,25 @@ uint64_t getAttackByOccupancy(const int8_t square,
 // can do it in the following way: kingAttacks & ~attackedSquares.
 // WARNING: For the pawn moves, it doesn't calculate the pawn promotions or en
 // passant, you have to handle them yourself.
-Move getPseudoLegal(const Piece type, const Coordinate coord,
+Move getPseudoLegal(const Piece type, const int8_t square,
                     const uint64_t friendly, const bool isWhite,
                     const uint64_t enemy) {
-  if (!isCoordValid(coord)) {
+  if (square < 0 || square >= BOARD_AREA) {
     return (Move){0, 0};
   }
 
   Move move = {0, 0};
-  const int8_t square = coordToSquare(coord);
   const uint64_t blocked = friendly | enemy;
 
   switch (type) {
-  case PAWN:
+  case PAWN: {
+    const Coordinate coord = {
+        .rank = (int8_t)(square / BOARD_LENGTH),
+        .file = (int8_t)(square % BOARD_LENGTH),
+    };
     move.quiet = generatePawnPushes(coord, blocked, isWhite);
     move.kills = generatePawnCaptures(coord, enemy, isWhite);
-    break;
+  } break;
   case KNIGHT:
     move.quiet = KNIGHT_ATTACK_MAP[square] & ~blocked;
     move.kills = KNIGHT_ATTACK_MAP[square] & enemy;
@@ -390,8 +393,9 @@ Move getPseudoLegal(const Piece type, const Coordinate coord,
     move.kills = attacks & enemy;
   } break;
   case QUEEN: {
-    const Move rook = getPseudoLegal(ROOK, coord, friendly, isWhite, enemy);
-    const Move bishop = getPseudoLegal(BISHOP, coord, friendly, isWhite, enemy);
+    const Move rook = getPseudoLegal(ROOK, square, friendly, isWhite, enemy);
+    const Move bishop =
+        getPseudoLegal(BISHOP, square, friendly, isWhite, enemy);
 
     move.quiet = rook.quiet | bishop.quiet;
     move.kills = rook.kills | bishop.kills;

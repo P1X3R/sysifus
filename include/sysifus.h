@@ -61,7 +61,7 @@ uint64_t getAttackByOccupancy(int8_t square,
                               const uint64_t lut[BOARD_AREA][possibleVariants],
                               uint64_t friendly, uint64_t enemy);
 
-Move getPseudoLegal(Piece type, Coordinate coord, uint64_t friendly,
-                    bool isWhite, uint64_t enemy);
+Move getPseudoLegal(Piece type, int8_t square, uint64_t friendly, bool isWhite,
+                    uint64_t enemy);
 
 void bake(void);
