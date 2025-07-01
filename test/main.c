@@ -31,11 +31,6 @@ static uint64_t generateRandomOccupancy(const uint8_t denominator) {
   uint64_t occupancy = 0;
 
   for (int8_t square = 0; square < BOARD_AREA; square++) {
-    // Because is a probability between of 1/16
-    // so there's a 6.25% of chance that a square is set
-    // So occuped bits are more spreaded out
-    const uint8_t denominator = 16;
-
     if ((rand() % denominator) == 1) {
       occupancy |= 1ULL << square;
     }
@@ -152,12 +147,16 @@ START_TEST(pawnCapturesProps) {
         (int8_t)(ctx.coord.file + 1),
     };
 
-    if (isCoordValid(leftKill) && isSet(leftKill, ctx.occupancy)) {
-      ck_assert(isSet(leftKill, captures));
+    uint64_t expected = 0;
+    if (isCoordValid(leftKill)) {
+      expected |= 1ULL << coordToSquare(leftKill);
     }
-    if (isCoordValid(rightKill) && isSet(rightKill, ctx.occupancy)) {
-      ck_assert(isSet(rightKill, captures));
+    if (isCoordValid(rightKill)) {
+      expected |= 1ULL << coordToSquare(rightKill);
     }
+    expected &= ctx.occupancy;
+
+    ck_assert_uint_eq(captures, expected);
   }
 }
 END_TEST

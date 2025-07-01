@@ -37,9 +37,10 @@ uint64_t generatePawnCaptures(const Coordinate coord, const uint64_t enemy,
   const uint64_t rightCapture =
       1ULL << ((coord.rank + direction) * BOARD_LENGTH + coord.file + 1);
 
-  return ((coord.file > 0 ? leftCapture : 0) |
-          (coord.file < BOARD_LENGTH - 1 ? rightCapture : 0)) *
-         (uint64_t)(coord.rank != (isWhite ? BOARD_LENGTH - 1 : 0));
+  return (((coord.file > 0 ? leftCapture : 0) |
+           (coord.file < BOARD_LENGTH - 1 ? rightCapture : 0)) *
+          (uint64_t)(coord.rank != (isWhite ? BOARD_LENGTH - 1 : 0))) &
+         enemy;
 }
 
 static uint64_t generateJumpingAttack(const Coordinate offsets[JUMPING_OFFSETS],
