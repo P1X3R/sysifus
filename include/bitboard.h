@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BOARD_LENGTH 8
 #define BOARD_AREA 64
 
@@ -22,3 +26,7 @@ static inline int8_t coordToSquare(const Coordinate coord) {
 static inline bool isSet(const Coordinate coord, const uint64_t bitboard) {
   return (bitboard & (1ULL << coordToSquare(coord)));
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -167,18 +167,12 @@ START_TEST(slidingAttackMap) {
     const uint64_t friendly = generateRandomOccupancy(8);
     const uint64_t enemy = generateRandomOccupancy(8);
     const bool isBishop = rand() % 2;
-    const uint64_t *relevantMask = isBishop
-                                       ? (const uint64_t *)BISHOP_RELEVANT_MASK
-                                       : (const uint64_t *)ROOK_RELEVANT_MASK;
+
     uint64_t moves;
     if (isBishop) {
-      moves = getAttackByOccupancy(square, relevantMask,
-                                   (uint16_t)BISHOP_POSSIBLE_VARIANTS,
-                                   BISHOP_ATTACK_MAP, friendly, enemy);
+      moves = getBishopAttackByOccupancy(square, friendly, enemy);
     } else {
-      moves = getAttackByOccupancy(square, relevantMask,
-                                   (uint16_t)ROOK_POSSIBLE_VARIANTS,
-                                   ROOK_ATTACK_MAP, friendly, enemy);
+      moves = getRookAttackByOccupancy(square, friendly, enemy);
     }
 
 #ifdef VERBOSE_LOG

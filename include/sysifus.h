@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "bitboard.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -55,13 +59,17 @@ inline uint64_t getAttacksByLUT(const uint64_t lut[BOARD_AREA],
   return lut[square] & ~blockedSquare;
 }
 
-uint64_t getAttackByOccupancy(int8_t square,
-                              const uint64_t relevantMask[BOARD_AREA],
-                              uint16_t possibleVariants,
-                              const uint64_t lut[BOARD_AREA][possibleVariants],
-                              uint64_t friendly, uint64_t enemy);
+uint64_t getBishopAttackByOccupancy(int8_t square, uint64_t friendly,
+                                    uint64_t enemy);
+
+uint64_t getRookAttackByOccupancy(int8_t square, uint64_t friendly,
+                                  uint64_t enemy);
 
 Move getPseudoLegal(Piece type, int8_t square, uint64_t friendly, bool isWhite,
                     uint64_t enemy);
 
 void bake(void);
+
+#ifdef __cplusplus
+}
+#endif

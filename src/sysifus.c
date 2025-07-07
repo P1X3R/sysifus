@@ -328,28 +328,37 @@ void bake(void) {
   }
 }
 
-uint64_t getAttackByOccupancy(const int8_t square,
-                              const uint64_t relevantMask[BOARD_AREA],
-                              const uint16_t possibleVariants,
-                              const uint64_t lut[BOARD_AREA][possibleVariants],
-                              const uint64_t friendly, const uint64_t enemy) {
-#ifndef NDEBUG
-  assert(lut != NULL);
-  assert(relevantMask != NULL);
-#endif /* ifndef NDEBUG */
-
+uint64_t getBishopAttackByOccupancy(const int8_t square,
+                                    const uint64_t friendly,
+                                    const uint64_t enemy) {
   if (square < 0 || square >= BOARD_AREA) {
     return 0;
   }
 
-  const uint16_t variantIndex =
-      getVariantIndex(friendly | enemy, (RelevantMask){relevantMask[square]});
+  const uint16_t variantIndex = getVariantIndex(
+      friendly | enemy, (RelevantMask){BISHOP_RELEVANT_MASK[square]});
 
 #ifndef NDEBUG
-  assert(variantIndex < possibleVariants);
+  assert(variantIndex < BISHOP_POSSIBLE_VARIANTS);
 #endif /* ifndef NDEBUG */
 
-  return lut[square][variantIndex] & ~friendly;
+  return BISHOP_ATTACK_MAP[square][variantIndex] & ~friendly;
+}
+
+uint64_t getRookAttackByOccupancy(const int8_t square, const uint64_t friendly,
+                                  const uint64_t enemy) {
+  if (square < 0 || square >= BOARD_AREA) {
+    return 0;
+  }
+
+  const uint16_t variantIndex = getVariantIndex(
+      friendly | enemy, (RelevantMask){ROOK_RELEVANT_MASK[square]});
+
+#ifndef NDEBUG
+  assert(variantIndex < ROOK_POSSIBLE_VARIANTS);
+#endif /* ifndef NDEBUG */
+
+  return ROOK_ATTACK_MAP[square][variantIndex] & ~friendly;
 }
 
 // WARNING: For king pseudo-legal you need to delete the attacked squares, you
@@ -380,16 +389,13 @@ Move getPseudoLegal(const Piece type, const int8_t square,
     move.kills = KNIGHT_ATTACK_MAP[square] & enemy;
     break;
   case BISHOP: {
-    const uint64_t attacks = getAttackByOccupancy(
-        square, BISHOP_RELEVANT_MASK, BISHOP_POSSIBLE_VARIANTS,
-        BISHOP_ATTACK_MAP, friendly, enemy);
+    const uint64_t attacks =
+        getBishopAttackByOccupancy(square, friendly, enemy);
     move.quiet = attacks & ~friendly;
     move.kills = attacks & enemy;
   } break;
   case ROOK: {
-    const uint64_t attacks =
-        getAttackByOccupancy(square, ROOK_RELEVANT_MASK, ROOK_POSSIBLE_VARIANTS,
-                             ROOK_ATTACK_MAP, friendly, enemy);
+    const uint64_t attacks = getRookAttackByOccupancy(square, friendly, enemy);
     move.quiet = attacks & ~friendly;
     move.kills = attacks & enemy;
   } break;
