@@ -3,12 +3,14 @@
 #include "sysifus.h"
 #include <check.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 #define TESTS_ITERATIONS 100
 #define VERBOSE_LOG
+
+#ifdef VERBOSE_LOG
+#include <stdio.h>
 
 static void printBitboard(uint64_t bitboard) {
   printf("  A B C D E F G H\n");
@@ -20,6 +22,7 @@ static void printBitboard(uint64_t bitboard) {
     printf("\n");
   }
 }
+#endif
 
 typedef struct {
   Coordinate coord;
