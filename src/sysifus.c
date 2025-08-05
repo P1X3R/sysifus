@@ -210,36 +210,34 @@ static void generateOccupancyVariants(const RelevantMask relevantMask,
   }
 }
 
-static uint16_t getVariantIndex(const uint64_t occupancy,
-                                const RelevantMask relevantMask) {
+__attribute__((always_inline)) static uint16_t
+getVariantIndex(const uint64_t occupancy, const RelevantMask relevantMask) {
   // Filter only relevant bits and compress them to LSB positions
   // const uint64_t occupied = occupancy & relevantMask.mask;
 
-// Use pext instruction if available (Intel/AMD CPUs with BMI2)
+  // Use pext instruction if available (Intel/AMD CPUs with BMI2)
 #if defined(__BMI2__)
-  return _pext_u64(occupied, relevantMask.mask);
+  return _pext_u64(occupancy, relevantMask.mask);
 #else
-  uint16_t variantIndex = 0;
-  uint64_t relevantMaskTemp = relevantMask.mask;
+  uint64_t mask = relevantMask.mask;
+  uint64_t blockers = occupancy & mask;
 
-  // Iterate over bits of the variant index Brian Kernighan's way
-  // https://www.geeksforgeeks.org/count-set-bits-in-an-integer/
-  for (uint8_t bit = 0; relevantMaskTemp; bit++) {
-    // This a & -a just isolate the least significant bit of number
-    const uint64_t LSB = relevantMaskTemp & -relevantMaskTemp;
-
-    // If the relevant mask the least significant bit is set in the occupancy
-    // variant, add a bit to the variant_index
-    if (occupancy & LSB) {
-      // Append the bit into variantIndex
-      variantIndex |= 1 << bit;
-    }
-
-    // Clear the least significant bit
-    relevantMaskTemp &= ~LSB;
+  if (!blockers) {
+    return 0;
   }
 
-  return variantIndex;
+  uint16_t index = 0;
+  uint8_t shift = 0;
+
+  while (mask) {
+    // Extract the bit from blockers and set it in the index
+    index |= ((blockers >> __builtin_ctzll(mask)) & 1) << shift;
+    shift++;
+
+    mask &= mask - 1;
+  }
+
+  return index;
 #endif
 }
 
