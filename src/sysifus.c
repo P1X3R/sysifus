@@ -375,6 +375,46 @@ uint64_t getRookAttackByOccupancy(const int8_t square, const uint64_t friendly,
   return ROOK_ATTACK_MAP[square][variantIndex] & ~friendly;
 }
 
+uint64_t getKills(const Piece type, const int8_t square,
+                  const uint64_t friendly, const bool isWhite,
+                  const uint64_t enemy) {
+  if (square < 0 || square >= BOARD_AREA) {
+    return 0;
+  }
+
+  uint64_t result = 0;
+
+  switch (type) {
+  case PAWN: {
+    const Coordinate coord = {
+        .rank = (int8_t)(square / BOARD_LENGTH),
+        .file = (int8_t)(square % BOARD_LENGTH),
+    };
+    result = generatePawnCaptures(coord, enemy, isWhite);
+  } break;
+  case KNIGHT:
+    result = KNIGHT_ATTACK_MAP[square] & enemy;
+    break;
+  case BISHOP:
+    result = getBishopAttackByOccupancy(square, friendly, enemy) & enemy;
+    break;
+  case ROOK:
+    result = getRookAttackByOccupancy(square, friendly, enemy) & enemy;
+    break;
+  case QUEEN:
+    result = getKills(BISHOP, square, friendly, isWhite, enemy) |
+             getKills(ROOK, square, friendly, isWhite, enemy);
+    break;
+  case KING:
+    result = KING_ATTACK_MAP[square] & enemy;
+    break;
+  case NOTHING:
+    break;
+  }
+
+  return result;
+}
+
 // WARNING: For king pseudo-legal you need to delete the attacked squares, you
 // can do it in the following way: kingAttacks & ~attackedSquares.
 // WARNING: For the pawn moves, it doesn't calculate the pawn promotions or en
