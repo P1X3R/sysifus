@@ -65,6 +65,9 @@ uint64_t getBishopAttackByOccupancy(int8_t square, uint64_t friendly,
 uint64_t getRookAttackByOccupancy(int8_t square, uint64_t friendly,
                                   uint64_t enemy);
 
+uint64_t getKills(Piece type, int8_t square, uint64_t friendly, bool isWhite,
+                  uint64_t enemy);
+
 Move getPseudoLegal(Piece type, int8_t square, uint64_t friendly, bool isWhite,
                     uint64_t enemy);
 
