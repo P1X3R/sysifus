@@ -210,7 +210,7 @@ static void generateOccupancyVariants(const RelevantMask relevantMask,
   }
 }
 
-__attribute__((always_inline)) static uint16_t
+__attribute__((always_inline)) static inline uint16_t
 getVariantIndex(const uint64_t occupancy, const RelevantMask relevantMask) {
   // Filter only relevant bits and compress them to LSB positions
   // const uint64_t occupied = occupancy & relevantMask.mask;
