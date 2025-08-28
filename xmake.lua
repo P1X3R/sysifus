@@ -8,6 +8,7 @@ target("sysifus")
   add_headerfiles("include/*.h")
   add_includedirs("include", { public = true })
   set_pcheader("include/luts.h")
+  add_cxflags("-Wno-unknown-pragmas")
 
 option("compile_sysifus_tests")
   set_default(false) -- Default to disabled
